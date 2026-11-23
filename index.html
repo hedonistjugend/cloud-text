@@ -4,12 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#6fb6ec">
-<meta name="version" content="cloud-text-v3">
+<meta name="version" content="cloud-text-v4">
 <title>Cloud Text</title>
 <style>
 @font-face{font-family:'Pacifico';font-display:block;src:url(pacifico-cyrillic.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 @font-face{font-family:'Pacifico';font-display:block;src:url(pacifico-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:'Pacifico';font-display:block;src:url(pacifico-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+FEFF,U+FFFD}
+@font-face{font-family:'Caveat';font-weight:400 700;font-display:block;src:url(caveat-cyrillic.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Caveat';font-weight:400 700;font-display:block;src:url(caveat-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Caveat';font-weight:400 700;font-display:block;src:url(caveat-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+FEFF,U+FFFD}
 html,body{margin:0;height:100%;overflow:hidden;background:#79bdf0;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none}
 canvas{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block}
 #inp{position:fixed;left:50%;bottom:12px;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;transform:translateX(-50%);caret-color:transparent;color:transparent;background:transparent}
@@ -22,7 +25,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:blo
 <input id="inp" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="40" aria-label="Text">
 <div id="hint">type anything &nbsp;·&nbsp; scroll to let it drift away</div>
 <script>
-// cloud-text-v3
+// cloud-text-v4
 (()=>{
 const Q=new URLSearchParams(location.search);
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
@@ -180,7 +183,7 @@ function drawBgClouds(dt,windExtra){
 const FONTS={
   pacifico:{f:'Pacifico',w:400,sx:1.14,st:0},
   lobster:{f:'Lobster',w:400,sx:1.1,st:0,q:'Lobster'},
-  caveat:{f:'Caveat',w:700,sx:1.06,st:.03,q:'Caveat:wght@700'},
+  caveat:{f:'Caveat',w:700,sx:1.08,st:.012,fs:1.3},
   shantell:{f:'Shantell Sans',w:800,sx:1.0,st:.02,q:'Shantell+Sans:wght@800'},
   playpen:{f:'Playpen Sans',w:800,sx:1.0,st:.02,q:'Playpen+Sans:wght@800'},
   marck:{f:'Marck Script',w:400,sx:1.08,st:.05,q:'Marck+Script'},
@@ -188,7 +191,7 @@ const FONTS={
   yellowtail:{f:'Yellowtail',w:400,sx:1.1,st:.04,q:'Yellowtail'},
   dancing:{f:'Dancing Script',w:700,sx:1.08,st:.03,q:'Dancing+Script:wght@700'},
 };
-const FD=FONTS[(Q.get('font')||'').toLowerCase()]||FONTS.pacifico;
+const FD=FONTS[(Q.get('font')||'').toLowerCase()]||FONTS.caveat;
 let cssReady=Promise.resolve();
 if(FD.q){const l=document.createElement('link');l.rel='stylesheet';l.href=`https://fonts.googleapis.com/css2?family=${FD.q}&display=block`;cssReady=new Promise(r=>{l.onload=r;l.onerror=r;setTimeout(r,4000)});document.head.appendChild(l);}
 const FONT=`${FD.w} {F}px "${FD.f}"`,SX=FD.sx;
@@ -196,7 +199,7 @@ const fnt=F=>FONT.replace('{F}',F);
 function layout(text){
   const off=document.createElement('canvas'),g=off.getContext('2d');
   const maxW=W*(W<600?.92:.86),maxH=H*.62;
-  let F=Math.min(H*.42,W*.34);
+  let F=Math.min(H*.42,W*.34)*(FD.fs||1);
   const words=text.split(/\s+/).filter(Boolean);
   function wrap(F){
     g.font=fnt(F);
