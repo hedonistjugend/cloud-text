@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#6fb6ec">
-<meta name="version" content="cloud-text-v2">
+<meta name="version" content="cloud-text-v3">
 <title>Cloud Text</title>
 <style>
 @font-face{font-family:'Pacifico';font-display:block;src:url(pacifico-cyrillic.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
@@ -22,7 +22,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:blo
 <input id="inp" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="40" aria-label="Text">
 <div id="hint">type anything &nbsp;·&nbsp; scroll to let it drift away</div>
 <script>
-// cloud-text-v2
+// cloud-text-v3
 (()=>{
 const Q=new URLSearchParams(location.search);
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
@@ -176,14 +176,30 @@ function drawBgClouds(dt,windExtra){
 }
 
 // ---------- text sampling ----------
-const FONT='Pacifico',SX=1.14;
+// ?font= test param (Pacifico is default, self-hosted); others load from Google Fonts
+const FONTS={
+  pacifico:{f:'Pacifico',w:400,sx:1.14,st:0},
+  lobster:{f:'Lobster',w:400,sx:1.1,st:0,q:'Lobster'},
+  caveat:{f:'Caveat',w:700,sx:1.06,st:.03,q:'Caveat:wght@700'},
+  shantell:{f:'Shantell Sans',w:800,sx:1.0,st:.02,q:'Shantell+Sans:wght@800'},
+  playpen:{f:'Playpen Sans',w:800,sx:1.0,st:.02,q:'Playpen+Sans:wght@800'},
+  marck:{f:'Marck Script',w:400,sx:1.08,st:.05,q:'Marck+Script'},
+  kaushan:{f:'Kaushan Script',w:400,sx:1.08,st:.025,q:'Kaushan+Script'},
+  yellowtail:{f:'Yellowtail',w:400,sx:1.1,st:.04,q:'Yellowtail'},
+  dancing:{f:'Dancing Script',w:700,sx:1.08,st:.03,q:'Dancing+Script:wght@700'},
+};
+const FD=FONTS[(Q.get('font')||'').toLowerCase()]||FONTS.pacifico;
+let cssReady=Promise.resolve();
+if(FD.q){const l=document.createElement('link');l.rel='stylesheet';l.href=`https://fonts.googleapis.com/css2?family=${FD.q}&display=block`;cssReady=new Promise(r=>{l.onload=r;l.onerror=r;setTimeout(r,4000)});document.head.appendChild(l);}
+const FONT=`${FD.w} {F}px "${FD.f}"`,SX=FD.sx;
+const fnt=F=>FONT.replace('{F}',F);
 function layout(text){
   const off=document.createElement('canvas'),g=off.getContext('2d');
   const maxW=W*(W<600?.92:.86),maxH=H*.62;
   let F=Math.min(H*.42,W*.34);
   const words=text.split(/\s+/).filter(Boolean);
   function wrap(F){
-    g.font=`${F}px ${FONT}`;
+    g.font=fnt(F);
     const lines=[];let cur='';
     for(const w of words){
       const t=cur?cur+' '+w:w;
@@ -194,7 +210,7 @@ function layout(text){
   let lines=[];
   for(let it=0;it<40;it++){
     lines=wrap(F);
-    g.font=`${F}px ${FONT}`;
+    g.font=fnt(F);
     const wMax=Math.max(...lines.map(l=>g.measureText(l).width*SX),1);
     const hTot=lines.length*F*1.5;
     if(wMax<=maxW&&hTot<=maxH)break;
@@ -207,9 +223,10 @@ function sample(text){
   const {F,lines}=layout(text);
   const off=document.createElement('canvas');off.width=W;off.height=H;
   const g=off.getContext('2d');
-  g.font=`${F}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#000';
+  g.font=fnt(F);g.textAlign='center';g.textBaseline='middle';g.fillStyle='#000';
   const lh=F*1.5,y0=H*.5-(lines.length-1)*lh/2;
   g.setTransform(SX,0,0,1,W/2*(1-SX),0);
+  if(FD.st){g.lineWidth=F*FD.st;g.lineJoin='round';g.strokeStyle='#000';lines.forEach((l,i)=>g.strokeText(l,W/2,y0+i*lh-F*.08));}
   lines.forEach((l,i)=>g.fillText(l,W/2,y0+i*lh-F*.08));
   g.setTransform(1,0,0,1,0,0);
   const data=g.getImageData(0,0,W,H).data;
@@ -304,7 +321,7 @@ inp.addEventListener('input',()=>{
 let curText='';
 async function setText(t){
   curText=t;
-  try{await document.fonts.load(`100px ${FONT}`,t||'a')}catch(e){}
+  try{await cssReady;await document.fonts.load(fnt(100),t||'a')}catch(e){}
   if(t!==curText)return;
   rebuild(t);
 }
